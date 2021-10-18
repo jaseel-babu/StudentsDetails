@@ -13,7 +13,7 @@ class DB {
             name TEXT NOT NULL,
             age TEXT NOT NULL,
             school TEXT NOT NULL,
-            standerd TEXT NOT NULL)""");
+            standerd TEXT NOT NULL,image TEXT NOT NULL)""");
       },
       version: 1,
     );
@@ -40,5 +40,12 @@ class DB {
   Future<void> delete(int id) async {
     final Database db = await initDB();
     await db.delete('MyTable1', where: "id=?", whereArgs: [id]);
+  }
+
+  Future<List<DataModel>> searchdata(String keyword) async {
+    final Database db = await initDB();
+    List<Map<String, dynamic>> result =
+        await db.query("MyTable1", where: "name=?", whereArgs: [keyword]);
+    return result.map((e) => DataModel.fromMap(e)).toList();
   }
 }

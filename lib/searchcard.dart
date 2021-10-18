@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sqflite_sample/dataModel.dart';
+import 'dart:io';
 
-class DataCard extends StatelessWidget {
-  const DataCard({
+class searchcard extends StatelessWidget {
+  const searchcard({
     Key? key,
     required this.data,
     required this.edit,
@@ -27,15 +29,9 @@ class DataCard extends StatelessWidget {
         Card(
             child: ListTile(
           leading: CircleAvatar(
-            child: IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: () {
-                edit(index);
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => StudentUpdate()));
-              },
-            ),
-          ),
+              child: Image(
+            image: AssetImage('assets/images/download.png'),
+          )),
           title: GestureDetector(
               child: Text(data.name!),
               onTap: () {
@@ -66,6 +62,20 @@ class DataCard extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
+        actions: [
+          Builder(builder: (context) {
+            return CircleAvatar(
+              child: IconButton(
+                icon: Icon(Icons.edit),
+                onPressed: () {
+                  edit(index);
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => StudentUpdate()));
+                },
+              ),
+            );
+          }),
+        ],
       ),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,

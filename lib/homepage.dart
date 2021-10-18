@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/services.dart';
+import 'package:path/path.dart';
 import 'package:sqflite_sample/dataModel.dart';
 import 'package:sqflite_sample/database.dart';
+import 'package:sqflite_sample/searchcard.dart';
 import 'dataCard.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'search.dart';
+import 'searchcard.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
@@ -13,35 +20,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
-  // File? image;
-  // Future pickImage(ImageSource source) async {
-  //   try {
-  //     final image = await ImagePicker().pickImage(source: source);
-  //     if (image == null) return;
-  //     // final imageTemporary = File(image.path);
-  //     final imagePermanent = await saveImagePermanently(image.path);
-  //     setState(() => this.image = imagePermanent);
-  //   } on PlatformException catch (e) {
-  //     print('Failed to pick image:$e');
-  //   }
-  // }
-
-  // Future<File> saveImagePermanently(String imagePath) async {
-  //   final directory = await getApplicationDocumentsDirectory();
-  //   final name = basename(imagePath);
-  //   final image = File('${directory.path}/$name');
-
-  //   return File(imagePath).copy(image.path);
-  // }
 
   TextEditingController nameController = TextEditingController();
   TextEditingController ageController = TextEditingController();
   TextEditingController schoolController = TextEditingController();
   TextEditingController standerdController = TextEditingController();
-  TextEditingController imageController = TextEditingController();
 
+  TextEditingController searchcontroller = TextEditingController();
   List<DataModel> datas = [];
+  List<DataModel> searchresults = [];
   bool fetching = true;
+  String? search;
 
   late DB db;
   @override
@@ -59,13 +48,33 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  searchmethod(index) async {
+    searchresults = await db.searchdata(search!);
+    // datas = await db.searchdata(search!);
+    setState(
+      () {},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    setState(() {});
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.purple[300],
         title: const Text("Student Details"),
-        actions: [IconButton(onPressed: () {}, icon: Icon(Icons.search))],
+        actions: [
+          IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => searchpage(),
+                  ),
+                );
+              },
+              icon: Icon(Icons.search))
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
@@ -79,11 +88,10 @@ class _HomePageState extends State<HomePage> {
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // buildsearch(),
                 Expanded(
                   child: ListView.builder(
                     itemCount: datas.length,
-                    itemBuilder: (context, index) => DataCard(
+                    itemBuilder: (context, index) => searchcard(
                       data: datas[index],
                       edit: editing,
                       index: index,
@@ -97,8 +105,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Widget buildsearch() =>
-  //     SearchWidget(text: "search", onChanged: searchbook, hintText: "Title");
   Scaffold AddStudent() {
     return Scaffold(
       appBar: AppBar(
@@ -109,9 +115,6 @@ class _HomePageState extends State<HomePage> {
         padding: EdgeInsets.only(top: 15.0, left: 10.0, right: 10.0),
         child: ListView(
           children: [
-            FlutterLogo(
-              size: 160,
-            ),
             NameField(nameController, 'Student Name'),
             NameField(ageController, 'Age'),
             NameField(schoolController, 'Place'),
@@ -136,11 +139,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+//Student Updatepage
+
   Scaffold StudentUpdate() {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.purple[300],
-        title: Text("Upadate Student Profile"),
+        title: Text("Update Student Profile"),
       ),
       body: Padding(
         padding: EdgeInsets.only(top: 15.0, left: 10.0, right: 10.0),
@@ -163,30 +168,33 @@ class _HomePageState extends State<HomePage> {
               Icons.image_outlined,
               () {},
             ),
-            Builder(builder: (context) {
-              return ElevatedButton(
-                  onPressed: () {
-                    DataModel newData = datas[currentIndex];
-                    newData.standerd = standerdController.text;
-                    newData.school = schoolController.text;
-                    newData.age = ageController.text;
-                    newData.name = nameController.text;
+            Builder(
+              builder: (context) {
+                return ElevatedButton(
+                    onPressed: () {
+                      DataModel newData = datas[currentIndex];
+                      newData.standerd = standerdController.text;
+                      newData.school = schoolController.text;
+                      newData.age = ageController.text;
+                      newData.name = nameController.text;
 
-                    db.update(newData, newData.id!);
-                    nameController.clear();
-                    ageController.clear();
-                    schoolController.clear();
-                    standerdController.clear();
-                    Navigator.pop(context);
-                    setState(() {});
-                  },
-                  child: Text("Update"));
-            })
+                      db.update(newData, newData.id!);
+                      nameController.clear();
+                      ageController.clear();
+                      schoolController.clear();
+                      standerdController.clear();
+                      Navigator.pop(context);
+                      setState(() {});
+                    },
+                    child: Text("Update"));
+              },
+            ),
           ],
         ),
       ),
     );
   }
+//******************************/
 
   ElevatedButton buildButtons(
       String buttonName, IconData icons, VoidCallback onClicked) {
@@ -210,39 +218,45 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+//************************************/
+
   Padding operateButtons(String buttonName) {
     return Padding(
       padding: EdgeInsets.only(top: 15.0, bottom: 15.0),
       child: Row(
         children: [
           Expanded(
-            child: Builder(builder: (context) {
-              return ElevatedButton(
+            child: Builder(
+              builder: (context) {
+                return ElevatedButton(
                   style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(Colors.purple)),
+                    backgroundColor: MaterialStateProperty.all(Colors.purple),
+                  ),
                   child: Text(buttonName),
                   onPressed: () {
                     DataModel dataLocal = DataModel(
-                        name: nameController.text,
-                        age: ageController.text,
-                        school: schoolController.text,
-                        standerd: standerdController.text);
+                      name: nameController.text,
+                      age: ageController.text,
+                      school: schoolController.text,
+                      standerd: standerdController.text,
+                    );
                     db.insertData(dataLocal);
                     dataLocal.id = datas[datas.length - 1].id! + 1;
-                    setState(() {
-                      datas.add(dataLocal);
-                    });
+                    setState(
+                      () {
+                        datas.add(dataLocal);
+                      },
+                    );
                     nameController.clear();
                     ageController.clear();
                     schoolController.clear();
                     standerdController.clear();
 
                     Navigator.pop(context);
-                    // Navigator.pushReplacement(context,
-                    //     MaterialPageRoute(builder: (context) => HomePage()));
-                  });
-            }),
+                  },
+                );
+              },
+            ),
           ),
           Container(
             width: 5.0,
@@ -252,6 +266,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+//**************************************/
+
   Padding NameField(TextEditingController controller, String label) {
     return Padding(
       padding: EdgeInsets.only(top: 15.0, bottom: 15.0),
@@ -260,13 +276,17 @@ class _HomePageState extends State<HomePage> {
           controller: controller,
           onChanged: (value) {},
           decoration: InputDecoration(
-              labelText: label,
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(5.0))),
+            labelText: label,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(5.0),
+            ),
+          ),
         ),
       ),
     );
   }
+
+//*******************************/
 
   void editing(index) {
     currentIndex = index;
@@ -274,14 +294,69 @@ class _HomePageState extends State<HomePage> {
     ageController.text = datas[index].age!;
     schoolController.text = datas[index].school!;
     standerdController.text = datas[index].standerd!;
+
     StudentUpdate();
   }
 
+//*************************************/
   void delete(int index) {
     db.delete(datas[index].id!);
     datas.removeAt(index);
+
     setState(() {});
   }
 
-  void searchbook(String value) {}
+//*************************************/
+
+  Scaffold searchpage() {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Search "),
+        backgroundColor: Colors.purple[300],
+      ),
+      body: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            children: [
+              Container(
+                child: TextField(
+                  controller: searchcontroller,
+                  onChanged: (value) {
+                    search = value;
+                  },
+                  decoration: InputDecoration(
+                      border: OutlineInputBorder(), labelText: 'Search Here'),
+                ),
+              ),
+              Builder(builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (context) => searchpage()));
+
+                    searchmethod(searchresults);
+                  },
+                  child: Text('search'),
+                );
+              }),
+              ListView.builder(
+                scrollDirection: Axis.vertical,
+                shrinkWrap: true,
+                itemCount: searchresults.length,
+                itemBuilder: (context, index) => searchcard(
+                  data: searchresults[index],
+                  edit: editing,
+                  index: index,
+                  StudentUpdate: StudentUpdate,
+                  delete: delete,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

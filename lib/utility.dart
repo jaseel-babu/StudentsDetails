@@ -1,8 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-
-import 'dart:convert';
 
 class Utility {
   static Image imageFromBase64String(String base64String) {
