@@ -6,14 +6,14 @@ class DB {
   Future<Database> initDB() async {
     String path = await getDatabasesPath();
     return openDatabase(
-      join(path, "MyDB3.db"),
+      join(path, "MyDB5.db"),
       onCreate: (database, version) async {
         await database.execute(
-            """CREATE TABLE MyTable1(id INTEGER PRIMARY KEY AUTOINCREMENT,
+            """CREATE TABLE MyTable3(id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             age TEXT NOT NULL,
             school TEXT NOT NULL,
-            standerd TEXT NOT NULL,image TEXT NOT NULL)""");
+            standerd TEXT NOT NULL,image TEXT)""");
       },
       version: 1,
     );
@@ -21,31 +21,31 @@ class DB {
 
   Future<bool> insertData(DataModel dataModel) async {
     final Database db = await initDB();
-    db.insert("MyTable1", dataModel.toMap());
+    db.insert("MyTable3", dataModel.toMap());
     return true;
   }
 
   Future<List<DataModel>> getData() async {
     final Database db = await initDB();
-    final List<Map<String, Object?>> datas = await db.query("MyTable1");
+    final List<Map<String, Object?>> datas = await db.query("MyTable3");
     return datas.map((e) => DataModel.fromMap(e)).toList();
   }
 
   Future<void> update(DataModel dataModel, int id) async {
     final Database db = await initDB();
     await db
-        .update('MyTable1', dataModel.toMap(), where: "id=?", whereArgs: [id]);
+        .update('MyTable3', dataModel.toMap(), where: "id=?", whereArgs: [id]);
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(int? id) async {
     final Database db = await initDB();
-    await db.delete('MyTable1', where: "id=?", whereArgs: [id]);
+    await db.delete('MyTable3', where: "id=?", whereArgs: [id]);
   }
 
   Future<List<DataModel>> searchdata(String keyword) async {
     final Database db = await initDB();
     List<Map<String, dynamic>> result =
-        await db.query("MyTable1", where: "name=?", whereArgs: [keyword]);
+        await db.query("MyTable3", where: "name=?", whereArgs: [keyword]);
     return result.map((e) => DataModel.fromMap(e)).toList();
   }
 }

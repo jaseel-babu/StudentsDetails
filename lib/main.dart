@@ -5,6 +5,7 @@ void main() => runApp(
       MaterialApp(
         debugShowCheckedModeBanner: false,
         home: MyApp(),
+        routes: {'/second': (context) => HomePage()},
       ),
     );
 

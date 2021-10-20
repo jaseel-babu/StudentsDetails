@@ -1,25 +1,30 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:sqflite_sample/dataModel.dart';
-import 'dart:io';
 
 class searchcard extends StatelessWidget {
-  const searchcard({
-    Key? key,
-    required this.data,
-    required this.edit,
-    required this.index,
-    required this.StudentUpdate,
-    required this.delete,
-  }) : super(key: key);
+  const searchcard(
+      {Key? key,
+      required this.data,
+      required this.edit,
+      required this.index,
+      required this.StudentUpdate,
+      required this.delete,
+      required this.img64})
+      : super(key: key);
   final DataModel data;
   final Function edit;
   final int? index;
   final Function delete;
   final Function StudentUpdate;
+  final String img64;
 
   @override
   Widget build(BuildContext context) {
+    print(img64);
+
+    dynamic img = data.img64;
+
     // TextEditingController searchcontroller = TextEditingController();
     return Column(
       children: [
@@ -28,10 +33,19 @@ class searchcard extends StatelessWidget {
         ),
         Card(
             child: ListTile(
-          leading: CircleAvatar(
-              child: Image(
-            image: AssetImage('assets/images/download.png'),
-          )),
+          leading: Container(
+            width: 80,
+            height: 80,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+            ),
+            child: img == null || img == ""
+                ? Image.asset('assets/images/download.png')
+                : Image.memory(
+                    base64Decode(img),
+                  ),
+          ),
           title: GestureDetector(
               child: Text(data.name!),
               onTap: () {
@@ -59,6 +73,7 @@ class searchcard extends StatelessWidget {
   }
 
   Scaffold studentProfile() {
+    dynamic img = data.img64;
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
@@ -69,7 +84,7 @@ class searchcard extends StatelessWidget {
                 icon: Icon(Icons.edit),
                 onPressed: () {
                   edit(index);
-                  Navigator.push(context,
+                  Navigator.pushReplacement(context,
                       MaterialPageRoute(builder: (context) => StudentUpdate()));
                 },
               ),
@@ -89,6 +104,20 @@ class searchcard extends StatelessWidget {
                   color: Colors.purple[50],
                   child: Column(
                     children: [
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Text("PHOTO"),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      img == null || img == ""
+                          ? Image.asset('assets/images/download.png')
+                          : Image.memory(
+                              base64Decode(img),
+                              width: MediaQuery.of(context).size.width,
+                              height: 200,
+                            ),
                       SizedBox(
                         height: 10,
                       ),

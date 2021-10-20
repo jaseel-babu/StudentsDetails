@@ -1,14 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:path/path.dart';
 import 'package:sqflite_sample/dataModel.dart';
 import 'package:sqflite_sample/database.dart';
 import 'package:sqflite_sample/searchcard.dart';
-import 'dataCard.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'search.dart';
 import 'searchcard.dart';
 
 class HomePage extends StatefulWidget {
@@ -25,15 +21,16 @@ class _HomePageState extends State<HomePage> {
   TextEditingController ageController = TextEditingController();
   TextEditingController schoolController = TextEditingController();
   TextEditingController standerdController = TextEditingController();
-
   TextEditingController searchcontroller = TextEditingController();
   List<DataModel> datas = [];
   List<DataModel> searchresults = [];
   bool fetching = true;
   String? search;
-
+  File? image;
+  String _img64 = '';
   late DB db;
   @override
+  //databse allocation
   void initState() {
     // TODO: implement initState
     super.initState();
@@ -56,6 +53,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void editing(index) {
+    currentIndex = index;
+    nameController.text = datas[index].name!;
+    ageController.text = datas[index].age!;
+    schoolController.text = datas[index].school!;
+    standerdController.text = datas[index].standerd!;
+
+    StudentUpdate();
+  }
+
+//*************************************/
+  void delete(int index) {
+    db.delete(datas[index].id);
+    datas.removeAt(index);
+    setState(() {});
+  }
+
+  Future pickImage(ImageSource Source) async {
+    var image = await ImagePicker().pickImage(source: Source);
+    if (image == null) return;
+    final bytes = File(image.path).readAsBytesSync();
+    _img64 = base64Encode(bytes);
+    print(_img64);
+  }
+
   @override
   Widget build(BuildContext context) {
     setState(() {});
@@ -65,15 +87,16 @@ class _HomePageState extends State<HomePage> {
         title: const Text("Student Details"),
         actions: [
           IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => searchpage(),
-                  ),
-                );
-              },
-              icon: Icon(Icons.search))
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => searchpage(),
+                ),
+              );
+            },
+            icon: Icon(Icons.search),
+          )
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -85,7 +108,9 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       body: fetching
-          ? Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
           : Column(
               children: [
                 Expanded(
@@ -97,6 +122,7 @@ class _HomePageState extends State<HomePage> {
                       index: index,
                       StudentUpdate: StudentUpdate,
                       delete: delete,
+                      img64: _img64,
                     ),
                   ),
                 )
@@ -115,6 +141,9 @@ class _HomePageState extends State<HomePage> {
         padding: EdgeInsets.only(top: 15.0, left: 10.0, right: 10.0),
         child: ListView(
           children: [
+            FlutterLogo(
+              size: 130,
+            ),
             NameField(nameController, 'Student Name'),
             NameField(ageController, 'Age'),
             NameField(schoolController, 'Place'),
@@ -122,7 +151,9 @@ class _HomePageState extends State<HomePage> {
             buildButtons(
               "Pick Image",
               Icons.image_outlined,
-              () {},
+              () {
+                pickImage(ImageSource.gallery);
+              },
             ),
             SizedBox(
               height: 10,
@@ -130,7 +161,9 @@ class _HomePageState extends State<HomePage> {
             buildButtons(
               "Camera",
               Icons.image_outlined,
-              () {},
+              () {
+                pickImage(ImageSource.camera);
+              },
             ),
             operateButtons('Save'),
           ],
@@ -158,7 +191,9 @@ class _HomePageState extends State<HomePage> {
             buildButtons(
               "Pick Image",
               Icons.image_outlined,
-              () {},
+              () {
+                pickImage(ImageSource.gallery);
+              },
             ),
             SizedBox(
               height: 10,
@@ -166,7 +201,9 @@ class _HomePageState extends State<HomePage> {
             buildButtons(
               "Camera",
               Icons.image_outlined,
-              () {},
+              () {
+                pickImage(ImageSource.camera);
+              },
             ),
             Builder(
               builder: (context) {
@@ -177,14 +214,18 @@ class _HomePageState extends State<HomePage> {
                       newData.school = schoolController.text;
                       newData.age = ageController.text;
                       newData.name = nameController.text;
-
+                      newData.img64 = _img64;
                       db.update(newData, newData.id!);
                       nameController.clear();
                       ageController.clear();
                       schoolController.clear();
                       standerdController.clear();
                       Navigator.pop(context);
-                      setState(() {});
+                      // Navigator.push(context,
+                      //     MaterialPageRoute(builder: (context) => HomePage()));
+                      setState(
+                        () {},
+                      );
                     },
                     child: Text("Update"));
               },
@@ -193,8 +234,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-  }
-//******************************/
+  } //******************************/
 
   ElevatedButton buildButtons(
       String buttonName, IconData icons, VoidCallback onClicked) {
@@ -235,11 +275,11 @@ class _HomePageState extends State<HomePage> {
                   child: Text(buttonName),
                   onPressed: () {
                     DataModel dataLocal = DataModel(
-                      name: nameController.text,
-                      age: ageController.text,
-                      school: schoolController.text,
-                      standerd: standerdController.text,
-                    );
+                        name: nameController.text,
+                        age: ageController.text,
+                        school: schoolController.text,
+                        standerd: standerdController.text,
+                        img64: _img64);
                     db.insertData(dataLocal);
                     dataLocal.id = datas[datas.length - 1].id! + 1;
                     setState(
@@ -286,27 +326,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-//*******************************/
-
-  void editing(index) {
-    currentIndex = index;
-    nameController.text = datas[index].name!;
-    ageController.text = datas[index].age!;
-    schoolController.text = datas[index].school!;
-    standerdController.text = datas[index].standerd!;
-
-    StudentUpdate();
-  }
-
-//*************************************/
-  void delete(int index) {
-    db.delete(datas[index].id!);
-    datas.removeAt(index);
-
-    setState(() {});
-  }
-
-//*************************************/
+/***************************************************/
 
   Scaffold searchpage() {
     return Scaffold(
@@ -330,17 +350,21 @@ class _HomePageState extends State<HomePage> {
                       border: OutlineInputBorder(), labelText: 'Search Here'),
                 ),
               ),
-              Builder(builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => searchpage()));
+              Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => searchpage()),
+                      );
 
-                    searchmethod(searchresults);
-                  },
-                  child: Text('search'),
-                );
-              }),
+                      searchmethod(searchresults);
+                    },
+                    child: Text('search'),
+                  );
+                },
+              ),
               ListView.builder(
                 scrollDirection: Axis.vertical,
                 shrinkWrap: true,
@@ -351,6 +375,7 @@ class _HomePageState extends State<HomePage> {
                   index: index,
                   StudentUpdate: StudentUpdate,
                   delete: delete,
+                  img64: _img64,
                 ),
               ),
             ],
